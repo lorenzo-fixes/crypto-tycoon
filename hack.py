@@ -9,6 +9,7 @@ money = 0
 miners = 0
 miner_level = 1
 miner_upgrade_cost = 500
+dev_mode = False  # Global variable to track developer mode
 
 # Define costs for new items
 gpu_rig_cost = 2000
@@ -40,12 +41,24 @@ def clear_console():
     # Clear the console based on the operating system
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def dev_mode_commands():
+    print("Developer Mode Commands:")
+    print("1. show_all - Show detailed information about the game state.")
+    print("2. reset - Reset all game variables to their initial values.")
+    print("3. add_money <amount> - Add specified amount of money.")
+    print("4. add_crypto <amount> - Add specified amount of crypto.")
+    print("5. set_miners <number> - Set the number of miners.")
+    print("6. set_miner_level <level> - Set the miner level.")
+    print("7. upgrade_miner - Upgrade the miner level and cost.")
+    print("8. exit_dev - Exit developer mode.")
+
 def main():
     global crypto  # Declare that we are using the global variable 'crypto'
     global money
     global miners
     global miner_level
     global miner_upgrade_cost
+    global dev_mode
 
     # Start the auto-mining thread
     auto_mine_thread = threading.Thread(target=auto_mine, daemon=True)
@@ -53,11 +66,20 @@ def main():
     
     while True:
         # Display the command prompt
-        command = input("CMD> ").strip().lower()
+        if dev_mode:
+            command = input("DEV_CMD> ").strip().lower()
+        else:
+            command = input("CMD> ").strip().lower()
         
-        if command == "hack":
+        if command == "dev_mode=on":
+            dev_mode = True
+            print("Developer mode activated.")
+            dev_mode_commands()
+        elif command == "dev_mode=off":
+            dev_mode = False
+            print("Developer mode deactivated.")
+        elif command == "hack":
             confirmation = input("Are you sure? (yes/no): ").strip().lower()
-            
             if confirmation == "yes":
                 print("Initiating hack...")
                 time.sleep(1)  # 1 second delay
@@ -164,6 +186,53 @@ def main():
             print(f"Each miner mines between {min_mine} and {max_mine} crypto per minute at current level.")
         elif command == "clear":
             clear_console()
+        elif dev_mode:
+            # Developer mode specific commands
+            if command == "show_all":
+                print(f"Developer Mode Information:\nCrypto: {crypto:.2f}, Money: ${money:.2f}, Miners: {miners}, Miner Level: {miner_level}, Upgrade Cost: ${miner_upgrade_cost}")
+                print("Available commands for the developer mode:")
+                dev_mode_commands()
+            elif command.startswith("add_money "):
+                try:
+                    amount = float(command.split()[1])
+                    money += amount
+                    print(f"Added ${amount:.2f} to your money. New balance: ${money:.2f}")
+                except ValueError:
+                    print("Invalid amount.")
+            elif command.startswith("add_crypto "):
+                try:
+                    amount = float(command.split()[1])
+                    crypto += amount
+                    print(f"Added {amount:.2f} crypto. New balance: {crypto:.2f}")
+                except ValueError:
+                    print("Invalid amount.")
+            elif command.startswith("set_miners "):
+                try:
+                    amount = int(command.split()[1])
+                    miners = amount
+                    print(f"Set number of miners to {miners}.")
+                except ValueError:
+                    print("Invalid number.")
+            elif command.startswith("set_miner_level "):
+                try:
+                    level = int(command.split()[1])
+                    miner_level = level
+                    min_mine, max_mine = miner_efficiency(miner_level)
+                    print(f"Set miner level to {miner_level}. Now mines between {min_mine} and {max_mine} crypto per minute per miner.")
+                except ValueError:
+                    print("Invalid level.")
+            elif command == "upgrade_miner":
+                miner_level += 1
+                money -= miner_upgrade_cost
+                miner_upgrade_cost = int(miner_upgrade_cost * 1.5)  # Increase the cost for the next upgrade
+                min_mine, max_mine = miner_efficiency(miner_level)
+                print(f"Upgraded miners to level {miner_level}. Now mines between {min_mine} and {max_mine} crypto per minute per miner.")
+                print(f"Remaining money: ${money:.2f}. Next upgrade cost: ${miner_upgrade_cost}")
+            elif command == "exit_dev":
+                dev_mode = False
+                print("Exiting developer mode.")
+            else:
+                print("Unknown developer mode command.")
         else:
             print("Unknown command")
 
